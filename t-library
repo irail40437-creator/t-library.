@@ -1,0 +1,340 @@
+import json
+import os
+
+LIBRARY_FILE = "library.json"
+
+
+def save_books():
+    try:
+        with open(LIBRARY_FILE, 'w', encoding='utf-8') as file:
+            json.dump(Books, file, ensure_ascii=False, indent=4)
+    except:
+        print("Ошибка при сохранении файла")
+
+
+def load_books():
+    global Books
+    if os.path.exists(LIBRARY_FILE):
+        try:
+            with open(LIBRARY_FILE, 'r', encoding='utf-8') as file:
+                Books = json.load(file)
+            print(f"Загружено {len(Books)} книг из файла")
+        except:
+            print("Ошибка при загрузке файла")
+            Books = []
+    else:
+        Books = []
+
+
+def display_book(book, index=None):
+    prefix = f"{index}. " if index else ""
+    print(f"{prefix}{book['название']} — {book['автор']} ({book['год']})")
+    print(f"   Жанр: {book['жанр']}")
+    print(
+        f"   Статус: {'✓ Прочитана' if book['прочитано'] else '○ Не прочитана'} | {'★ В избранном' if book['избранная'] else '☆ Не в избранном'}")
+    print(f"   Описание: {book['описание'][:100]}..." if len(
+        book['описание']) > 100 else f"   Описание: {book['описание']}")
+    print("-" * 50)
+
+
+def sort_books(books, key, reverse=False):
+
+    if key == "год":
+        return sorted(books, key=lambda x: int(x[key]), reverse=reverse)
+    return sorted(books, key=lambda x: x[key].lower(), reverse=reverse)
+
+
+Books = []
+load_books()
+
+while True:
+    print("\n--- T-Библиотека ---")
+    print("1. Добавить книгу")
+    print("2. Ваша библиотека")
+    print("3. Выйти")
+
+    choice = input("Выберите действие: ")
+
+    if choice == "1":
+        Book_name = input("Введите название книги: ")
+        Book_author = input("Введите полное имя автора: ")
+        Book_year = input("Введите год выхода: ")
+        Book_genre = input("Введите жанр: ")
+        Book_description = input("Напишите небольшое описание: ")
+
+        book = {
+            "название": Book_name,
+            "автор": Book_author,
+            "год": Book_year,
+            "жанр": Book_genre,
+            "описание": Book_description,
+            "избранная": False,
+            "прочитано": False
+        }
+
+        Books.append(book)
+        save_books()
+        print("Книга добавлена!")
+
+    elif choice == "2":
+        while True:
+            print("\n--- Ваша библиотека ---")
+            print("1. Просмотреть все книги")
+            print("2. Сортировка книг")
+            print("3. Фильтрация книг")
+            print("4. Удалить книгу")
+            print("5. Поиск книги")
+            print("6. Избранное")
+            print("7. Прочитанные")
+            print("8. Вернуться в главное меню")
+
+            choice2 = input("Выберите действие: ")
+
+            if choice2 == "1":
+                if not Books:
+                    print("Библиотека пуста")
+                else:
+                    for i, book in enumerate(Books, 1):
+                        display_book(book, i)
+
+            elif choice2 == "2":
+                print("\n--- Сортировка ---")
+                print("1. По названию (А-Я)")
+                print("2. По названию (Я-А)")
+                print("3. По автору (А-Я)")
+                print("4. По автору (Я-А)")
+                print("5. По году (возрастание)")
+                print("6. По году (убывание)")
+
+                sort_choice = input("Выберите тип сортировки: ")
+
+                if not Books:
+                    print("Библиотека пуста")
+                    continue
+
+                sorted_books = Books.copy()
+                if sort_choice == "1":
+                    sorted_books = sort_books(Books, "название")
+                elif sort_choice == "2":
+                    sorted_books = sort_books(Books, "название", reverse=True)
+                elif sort_choice == "3":
+                    sorted_books = sort_books(Books, "автор")
+                elif sort_choice == "4":
+                    sorted_books = sort_books(Books, "автор", reverse=True)
+                elif sort_choice == "5":
+                    sorted_books = sort_books(Books, "год")
+                elif sort_choice == "6":
+                    sorted_books = sort_books(Books, "год", reverse=True)
+                else:
+                    print("Неверный выбор")
+                    continue
+
+                for i, book in enumerate(sorted_books, 1):
+                    display_book(book, i)
+
+            elif choice2 == "3":
+                while True:
+                    print("\n--- Фильтрация ---")
+                    print("1. По жанру")
+                    print("2. По автору")
+                    print("3. По году")
+                    print("4. Только прочитанные")
+                    print("5. Только непрочитанные")
+                    print("6. Вернуться")
+
+                    choice3 = input("Выберите действие: ")
+
+                    if choice3 in ["1", "2", "3"]:
+                        search = input(f"Введите {['жанр', 'автор', 'год'][int(choice3) - 1]}: ").lower()
+                        found = False
+                        key = ["жанр", "автор", "год"][int(choice3) - 1]
+
+                        for book in Books:
+                            if search in book[key].lower():
+                                display_book(book)
+                                found = True
+                        if not found:
+                            print("Книги не найдены")
+
+                    elif choice3 == "4":
+                        found = False
+                        for book in Books:
+                            if book["прочитано"]:
+                                display_book(book)
+                                found = True
+                        if not found:
+                            print("Нет прочитанных книг")
+
+                    elif choice3 == "5":
+                        found = False
+                        for book in Books:
+                            if not book["прочитано"]:
+                                display_book(book)
+                                found = True
+                        if not found:
+                            print("Нет непрочитанных книг")
+
+                    elif choice3 == "6":
+                        break
+                    else:
+                        print("Неверный выбор")
+
+            elif choice2 == "4":
+                if not Books:
+                    print("Библиотека пуста")
+                else:
+                    print("\nСписок книг:")
+                    for i, book in enumerate(Books, 1):
+                        print(f"{i}. {book['название']} — {book['автор']}")
+
+                    try:
+                        num = int(input("Введите номер книги для удаления: "))
+                        if 1 <= num <= len(Books):
+                            del_Book = Books.pop(num - 1)
+                            save_books()
+                            print(f"Книга '{del_Book['название']}' удалена!")
+                        else:
+                            print("Неверный номер книги!")
+                    except ValueError:
+                        print("Пожалуйста, введите число!")
+
+            elif choice2 == "5":
+                search = input("Введите ключевое слово для поиска: ").lower()
+                found = False
+
+                for book in Books:
+                    if (search in book["название"].lower() or
+                            search in book["автор"].lower() or
+                            search in book["год"].lower() or
+                            search in book["жанр"].lower() or
+                            search in book["описание"].lower()):
+                        display_book(book)
+                        found = True
+
+                if not found:
+                    print("Книги не найдены")
+
+            elif choice2 == "6":
+                while True:
+                    print("\n--- Избранное ---")
+                    print("1. Просмотреть все избранные книги")
+                    print("2. Добавить в избранное")
+                    print("3. Удалить из избранного")
+                    print("4. Вернуться")
+
+                    choice3 = input("Выберите действие: ")
+
+                    if choice3 == "1":
+                        found_favorites = False
+                        for book in Books:
+                            if book["избранная"]:
+                                display_book(book)
+                                found_favorites = True
+                        if not found_favorites:
+                            print("У вас пока нет избранных книг")
+
+                    elif choice3 == "2":
+                        search = input("Введите название книги: ").lower()
+                        found = False
+                        for book in Books:
+                            if search in book["название"].lower():
+                                if not book["избранная"]:
+                                    book["избранная"] = True
+                                    save_books()
+                                    print(f"Книга '{book['название']}' добавлена в избранное")
+                                else:
+                                    print(f"Книга '{book['название']}' уже в избранном")
+                                found = True
+                                break
+                        if not found:
+                            print("Книга не найдена")
+
+                    elif choice3 == "3":
+                        search = input("Введите название книги: ").lower()
+                        found = False
+                        for book in Books:
+                            if search in book["название"].lower():
+                                if book["избранная"]:
+                                    book["избранная"] = False
+                                    save_books()
+                                    print(f"Книга '{book['название']}' удалена из избранного")
+                                else:
+                                    print(f"Книга '{book['название']}' не была в избранном")
+                                found = True
+                                break
+                        if not found:
+                            print("Книга не найдена")
+
+                    elif choice3 == "4":
+                        break
+                    else:
+                        print("Неверный выбор")
+
+            elif choice2 == "7":
+                while True:
+                    print("\n--- Прочитанные ---")
+                    print("1. Просмотреть все прочитанные книги")
+                    print("2. Отметить как прочитанную")
+                    print("3. Отметить как непрочитанную")
+                    print("4. Вернуться")
+
+                    choice4 = input("Выберите действие: ")
+
+                    if choice4 == "1":
+                        found = False
+                        for book in Books:
+                            if book["прочитано"]:
+                                display_book(book)
+                                found = True
+                        if not found:
+                            print("У вас пока нет прочитанных книг")
+
+                    elif choice4 == "2":
+                        search = input("Введите название книги: ").lower()
+                        found = False
+                        for book in Books:
+                            if search in book["название"].lower():
+                                if not book["прочитано"]:
+                                    book["прочитано"] = True
+                                    save_books()
+                                    print(f"Книга '{book['название']}' отмечена как прочитанная")
+                                else:
+                                    print(f"Книга '{book['название']}' уже отмечена как прочитанная")
+                                found = True
+                                break
+                        if not found:
+                            print("Книга не найдена")
+
+                    elif choice4 == "3":
+                        search = input("Введите название книги: ").lower()
+                        found = False
+                        for book in Books:
+                            if search in book["название"].lower():
+                                if book["прочитано"]:
+                                    book["прочитано"] = False
+                                    save_books()
+                                    print(f"Книга '{book['название']}' отмечена как непрочитанная")
+                                else:
+                                    print(f"Книга '{book['название']}' уже отмечена как непрочитанная")
+                                found = True
+                                break
+                        if not found:
+                            print("Книга не найдена")
+
+                    elif choice4 == "4":
+                        break
+                    else:
+                        print("Неверный выбор")
+
+            elif choice2 == "8":
+                break
+
+            else:
+                print("Неверный выбор, попробуйте снова")
+
+    elif choice == "3":
+        save_books()
+        print("До свидания!")
+        break
+    else:
+        print("Неверный выбор, попробуйте снова")
